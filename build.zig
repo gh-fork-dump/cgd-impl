@@ -74,6 +74,19 @@ pub fn build(b: *std.Build) void {
             .os_tag = .linux,
             .abi = .musl,
             .cpu_model = .{ .explicit = &riscv.cpu.sifive_u74 },
+            .cpu_features_add = blk: {
+                var set = Target.Cpu.Feature.Set.empty;
+                // rv64imafdc_zicntr_zicsr_zifencei_zihpm_zba_zbb
+                const features = [_]riscv.Feature{
+                    .@"64bit", .i,        .m,     .a,
+                    .f,        .d,        .c,     .zicntr,
+                    .zicsr,    .zifencei, .zihpm, .zba,
+                    .zbb,
+                };
+                for (features) |f|
+                    set.addFeature(@intFromEnum(f));
+                break :blk set;
+            },
         },
         // cfarm(400|401) - Loongson 3C5000L. Doesn't compile.
         // .{
