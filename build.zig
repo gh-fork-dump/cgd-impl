@@ -7,6 +7,8 @@ const mips = Target.mips;
 const powerpc = Target.powerpc;
 const riscv = Target.riscv;
 
+const Impl = enum { std, stein };
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -19,8 +21,14 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
         .strip = b.option(bool, "strip", "strip the binary"),
     });
-
     b.installArtifact(exe);
+
+    const impl = b.option(Impl, "impl", "GCD implementation") orelse .std;
+    {
+        const opts = b.addOptions();
+        opts.addOption(Impl, "impl", impl);
+        exe.root_module.addOptions("options", opts);
+    }
 
     const release = b.step("release", "make an upstream binary release");
     // Builds for targets great and small
@@ -96,11 +104,9 @@ pub fn build(b: *std.Build) void {
         // },
     };
 
-    const Impl = enum { std, stein };
-
-    for ([_]Impl{ .std, .stein }) |impl| {
+    for ([_]Impl{ .std, .stein }) |i| {
         const opts = b.addOptions();
-        opts.addOption(Impl, "impl", impl);
+        opts.addOption(Impl, "impl", i);
 
         for (release_targets) |target_query| {
             const resolved_target = b.resolveTargetQuery(target_query);
@@ -121,7 +127,7 @@ pub fn build(b: *std.Build) void {
                 t.cpu.model.name,
                 @tagName(t.os.tag),
                 rel_exe.name,
-                @tagName(impl),
+                @tagName(i),
             });
 
             release.dependOn(&install.step);
