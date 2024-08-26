@@ -7,7 +7,11 @@ const mips = Target.mips;
 const powerpc = Target.powerpc;
 const riscv = Target.riscv;
 
-const Impl = enum { std, stein };
+const Impl = enum {
+    std,
+    stein,
+    lemire,
+};
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -104,7 +108,7 @@ pub fn build(b: *std.Build) void {
         // },
     };
 
-    for ([_]Impl{ .std, .stein }) |i| {
+    for ([_]Impl{ .std, .stein, .lemire }) |i| {
         const opts = b.addOptions();
         opts.addOption(Impl, "impl", i);
 
