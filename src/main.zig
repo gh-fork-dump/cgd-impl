@@ -4,6 +4,7 @@ const gcd = switch (options.impl) {
     .std => std.math.gcd,
     .stein => gcdStein,
     .lemire => gcdLemire,
+    .Fri3dNstuff => gcdFri3dNstuff,
 };
 
 pub fn main() void {
@@ -11,10 +12,12 @@ pub fn main() void {
     // init with a runtime known seed
     var rand = std.Random.Xoroshiro128.init(std.os.argv.len);
     const random = rand.random();
+
+    const Int = std.meta.Int(.unsigned, @bitSizeOf(usize) - 1);
     var res: usize = 0;
     for (0..10_000_000) |_| {
-        const a = random.int(usize);
-        const b = random.int(usize);
+        const a: usize = random.int(Int);
+        const b: usize = random.int(Int);
         res +%= @truncate(gcd(a, b));
     }
     std.debug.print("{}\n", .{res});
@@ -106,4 +109,38 @@ pub fn gcdLemire(a: anytype, b: anytype) @TypeOf(a, b) {
 
         if (y == 0) return x << @intCast(shift);
     }
+}
+
+pub fn gcdFri3dNstuff(a: anytype, b: anytype) @TypeOf(a, b) {
+    const N = switch (@TypeOf(a, b)) {
+        // convert comptime_int to some sized int so we can @ctz on it.
+        // type coercion takes care of the conversion back to comptime_int
+        // at function's return
+        comptime_int => std.math.IntFittingRange(@min(a, b), @max(a, b)),
+        else => |T| T,
+    };
+    // integers are unsigned, at least one is nonzero
+    comptime std.debug.assert(@typeInfo(N).Int.signedness == .unsigned);
+    std.debug.assert(a != 0 or b != 0);
+
+    var x: N = a;
+    var y: N = b;
+
+    if (x == 0) return y;
+    if (y == 0) return x;
+
+    const xz = @ctz(x);
+    const yz = @ctz(y);
+    const shift = @min(xz, yz);
+    x >>= @intCast(xz);
+    y >>= @intCast(yz);
+    var diff = y -% x;
+
+    while (diff != 0) : (diff = y -% x) {
+        const zeros = @ctz(diff);
+        if (x > y) diff = -%diff;
+        y = @min(x, y);
+        x = diff >> @intCast(zeros);
+    }
+    return y << @intCast(shift);
 }

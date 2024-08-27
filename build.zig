@@ -11,6 +11,7 @@ const Impl = enum {
     std,
     stein,
     lemire,
+    Fri3dNstuff,
 };
 
 pub fn build(b: *std.Build) void {
@@ -108,7 +109,7 @@ pub fn build(b: *std.Build) void {
         // },
     };
 
-    for ([_]Impl{ .std, .stein, .lemire }) |i| {
+    for ([_]Impl{ .std, .stein, .lemire, .Fri3dNstuff }) |i| {
         const opts = b.addOptions();
         opts.addOption(Impl, "impl", i);
 
