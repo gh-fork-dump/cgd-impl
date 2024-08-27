@@ -7,17 +7,19 @@ const gcd = switch (options.impl) {
     .Fri3dNstuff => gcdFri3dNstuff,
 };
 
+const Int = if (@bitSizeOf(usize) == 32) u32 else u64;
+const IntMin = std.meta.Int(.unsigned, options.int_size - 1);
+
 pub fn main() void {
     std.debug.print("gcd impl = {}\n", .{options.impl});
     // init with a runtime known seed
     var rand = std.Random.Xoroshiro128.init(std.os.argv.len);
     const random = rand.random();
 
-    const Int = std.meta.Int(.unsigned, @bitSizeOf(usize) - 1);
-    var res: usize = 0;
+    var res: Int = 0;
     for (0..10_000_000) |_| {
-        const a: usize = random.int(Int);
-        const b: usize = random.int(Int);
+        const a: Int = random.int(IntMin);
+        const b: Int = random.int(IntMin);
         res +%= @truncate(gcd(a, b));
     }
     std.debug.print("{}\n", .{res});

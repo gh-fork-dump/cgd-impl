@@ -14,6 +14,13 @@ const Impl = enum {
     Fri3dNstuff,
 };
 
+fn makeOpts(b: *std.Build, impl: Impl, size: usize) *std.Build.Step.Options {
+    const opts = b.addOptions();
+    opts.addOption(Impl, "impl", impl);
+    opts.addOption(usize, "int_size", size);
+    return opts;
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -29,11 +36,8 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
 
     const impl = b.option(Impl, "impl", "GCD implementation") orelse .std;
-    {
-        const opts = b.addOptions();
-        opts.addOption(Impl, "impl", impl);
-        exe.root_module.addOptions("options", opts);
-    }
+    const intSize = b.option(usize, "int-size", "Bit size of the random integers") orelse 64;
+    exe.root_module.addOptions("options", makeOpts(b, impl, intSize));
 
     const release = b.step("release", "make an upstream binary release");
     // Builds for targets great and small
@@ -110,8 +114,7 @@ pub fn build(b: *std.Build) void {
     };
 
     for ([_]Impl{ .std, .stein, .lemire, .Fri3dNstuff }) |i| {
-        const opts = b.addOptions();
-        opts.addOption(Impl, "impl", i);
+        const opts = makeOpts(b, i, intSize);
 
         for (release_targets) |target_query| {
             const resolved_target = b.resolveTargetQuery(target_query);
